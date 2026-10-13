@@ -1,27 +1,38 @@
-# Deploy FastAPI on Render
+# FastAPI — Teachable Machine P82_LPxEy
 
-Use this repo as a template to deploy a Python [FastAPI](https://fastapi.tiangolo.com) service on Render.
+Este backend recibe imágenes mediante HTTP y devuelve las predicciones del modelo. Incluye dos formatos de entrada:
 
-See https://render.com/docs/deploy-fastapi or follow the steps below:
+- `POST /api/v1/classify` — `multipart/form-data`, campo `image`.
+- `POST /api/v1/classify/base64` — JSON con `image_base64` (data URL o Base64 puro) y `filename`.
+- `POST /api/v1/classify/base64` — alias explícito para JSON/Base64.
+- `GET /health` — estado de carga del modelo.
+- `GET /docs` — Swagger interactivo.
 
-## Manual Steps
+## 1. Exportar el modelo
 
-1. You may use this repository directly or [create your own repository from this template](https://github.com/render-examples/fastapi/generate) if you'd like to customize the code.
-2. Create a new Web Service on Render.
-3. Specify the URL to your new repository or this repository.
-4. Render will automatically detect that you are deploying a Python service and use `pip` to download the dependencies.
-5. Specify the following as the Start Command.
+El HTML puede usar el modelo alojado de TensorFlow.js, pero TensorFlow/Keras en Python necesita el archivo Keras exportado. En Teachable Machine, abre el proyecto asociado al ID `P82_LPxEy`, selecciona **Export Model → TensorFlow → Keras** y coloca `keras_model.h5` y `labels.txt` en `models/`.
 
-    ```shell
-    uvicorn main:app --host 0.0.0.0 --port $PORT
-    ```
+No es posible convertir automáticamente `model.json` de TensorFlow.js a un modelo Keras usando solo esta URL. Si ya no tienes acceso al proyecto original, descarga los archivos Keras desde una copia/exportación que conserves.
 
-6. Click Create Web Service.
+## 2. Instalar y ejecutar
 
-Or simply click:
+Se recomienda Python 3.10 o 3.11 para TensorFlow 2.15.1. Desde esta carpeta:
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/render-examples/fastapi)
+```bash
+python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# Linux/macOS:
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-## Thanks
+Comprueba `http://127.0.0.1:8000/health` y abre `http://127.0.0.1:8000/docs`. Si el modelo no se encuentra, la API inicia pero responde `503` en la clasificación hasta que se agreguen los archivos del modelo.
 
-Thanks to [Harish](https://harishgarg.com) for the [inspiration to create a FastAPI quickstart for Render](https://twitter.com/harishkgarg/status/1435084018677010434) and for some sample code!
+## 3. Conectar el HTML
+
+Abre `index.html` y en la sección **Consumo por API** deja la URL `http://127.0.0.1:8000`. Elige el formato y ejecuta la petición. El HTML ya no simula la respuesta: envía un `fetch()` HTTP al backend y muestra la respuesta o el error real.
+
+Si el HTML y FastAPI están en equipos distintos, cambia la URL por la dirección/IP del servidor. Si se publica en Internet, usa HTTPS y limita `CORS_ORIGINS` a los dominios autorizados. CORS no sustituye autenticación; agrega autenticación y límites adicionales antes de exponerlo públicamente.
